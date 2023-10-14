@@ -127,6 +127,7 @@ export default function EmissionView({ entries }: EmissionViewProps) {
   const NONE = "__none__";
   const [selected, setSelected] = useState(NONE);
   const [scope2Option, setScope2Option] = useState("market");
+  const [mode, setMode] = useState<string>("absolute");
   const companies = getCompanies(entries);
 
   const companyOptions = [
@@ -135,6 +136,28 @@ export default function EmissionView({ entries }: EmissionViewProps) {
   ];
 
   const scope2Options = [{ value: "market" }, { value: "location" }];
+  const modeOptions = [{ value: "absolute" }, { value: "relative" }];
+
+  const calculatedEntries =
+    mode === "relative"
+      ? entries.map(
+          ({
+            revenue,
+            emissions_scope1,
+            emissions_scope2_location,
+            emissions_scope2_market,
+            emissions_scope3,
+            ...rest
+          }) => ({
+            ...rest,
+            revenue,
+            emissions_scope1: emissions_scope1 / revenue,
+            emissions_scope2_market: emissions_scope2_market / revenue,
+            emissions_scope2_location: emissions_scope2_location / revenue,
+            emissions_scope3: emissions_scope3 / revenue,
+          }),
+        )
+      : entries;
 
   return (
     <div>
@@ -148,8 +171,13 @@ export default function EmissionView({ entries }: EmissionViewProps) {
         selected={scope2Option}
         handleChange={(e) => setScope2Option(e.target.value)}
       />
+      <RadioButtons
+        options={modeOptions}
+        selected={mode}
+        handleChange={(e) => setMode(e.target.value)}
+      />
       <AbsoluteEmissions
-        entries={entries}
+        entries={calculatedEntries}
         selected={selected}
         scope2Option={scope2Option}
       />
