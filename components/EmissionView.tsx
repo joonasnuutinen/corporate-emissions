@@ -16,10 +16,10 @@ interface Option {
   label?: string;
 }
 
-interface SelectProps {
+interface SelectProps<T> {
   options: Option[];
   selected: string;
-  handleChange: (e: ChangeEvent<HTMLSelectElement>) => void;
+  handleChange: (e: ChangeEvent<T>) => void;
 }
 
 interface EmissionViewProps {
@@ -32,28 +32,54 @@ function getCompanies(entries: DataEntry[]): string[] {
   return [...companies].sort((a, b) => (a < b ? -1 : 1));
 }
 
-function Select({ options, selected, handleChange }: SelectProps) {
+function Select({
+  options,
+  selected,
+  handleChange,
+}: SelectProps<HTMLSelectElement>) {
   return (
     <select value={selected} onChange={handleChange}>
-      {[
-        options.map(({ value, label }) => (
-          <option key={value} value={value}>
-            {label || value}
-          </option>
-        )),
-      ]}
+      {options.map(({ value, label }) => (
+        <option key={value} value={value}>
+          {label || value}
+        </option>
+      ))}
     </select>
+  );
+}
+
+function RadioButtons({
+  options,
+  selected,
+  handleChange,
+}: SelectProps<HTMLInputElement>) {
+  return (
+    <div>
+      {options.map(({ value, label }) => (
+        <label key={value}>
+          <input
+            type="radio"
+            value={value}
+            checked={selected === value}
+            onChange={handleChange}
+          />
+          {label || value}
+        </label>
+      ))}
+    </div>
   );
 }
 
 interface AbsoluteEmissionsProps {
   entries: DataEntry[];
   selected: string;
+  scope2Option: string;
 }
 
 const AbsoluteEmissions = memo(function AbsoluteEmissions({
   entries,
   selected,
+  scope2Option,
 }: AbsoluteEmissionsProps) {
   const selectedEntries = entries
     .filter((_) => _.company === selected)
@@ -81,7 +107,7 @@ const AbsoluteEmissions = memo(function AbsoluteEmissions({
       />
       <Area
         type="monotone"
-        dataKey="emissions_scope2_location"
+        dataKey={`emissions_scope2_${scope2Option}`}
         stackId="1"
         stroke="blue"
         fill="blue"
@@ -100,21 +126,33 @@ const AbsoluteEmissions = memo(function AbsoluteEmissions({
 export default function EmissionView({ entries }: EmissionViewProps) {
   const NONE = "__none__";
   const [selected, setSelected] = useState(NONE);
+  const [scope2Option, setScope2Option] = useState("market");
   const companies = getCompanies(entries);
 
-  const options = [
+  const companyOptions = [
     { value: NONE, label: "Select company" },
     ...companies.map((company) => ({ value: company })),
   ];
 
+  const scope2Options = [{ value: "market" }, { value: "location" }];
+
   return (
     <div>
       <Select
-        options={options}
+        options={companyOptions}
         selected={selected}
         handleChange={(e) => setSelected(e.target.value)}
       />
-      <AbsoluteEmissions entries={entries} selected={selected} />
+      <RadioButtons
+        options={scope2Options}
+        selected={scope2Option}
+        handleChange={(e) => setScope2Option(e.target.value)}
+      />
+      <AbsoluteEmissions
+        entries={entries}
+        selected={selected}
+        scope2Option={scope2Option}
+      />
     </div>
   );
 }
