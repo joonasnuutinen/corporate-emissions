@@ -1,6 +1,14 @@
 "use client";
 
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useState, memo } from "react";
+import {
+  AreaChart,
+  Area,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+} from "recharts";
 import { DataEntry } from "@/types";
 
 interface Option {
@@ -38,6 +46,57 @@ function Select({ options, selected, handleChange }: SelectProps) {
   );
 }
 
+interface AbsoluteEmissionsProps {
+  entries: DataEntry[];
+  selected: string;
+}
+
+const AbsoluteEmissions = memo(function AbsoluteEmissions({
+  entries,
+  selected,
+}: AbsoluteEmissionsProps) {
+  const selectedEntries = entries
+    .filter((_) => _.company === selected)
+    .sort((a, b) => (a.year < b.year ? -1 : 1));
+
+  if (selectedEntries.length < 1) return null;
+
+  return (
+    <AreaChart
+      width={600}
+      height={400}
+      data={selectedEntries}
+      margin={{ top: 10, right: 5, bottom: 5, left: 40 }}
+    >
+      <CartesianGrid stroke="#ccc" />
+      <XAxis dataKey="year" />
+      <YAxis />
+      <Tooltip />
+      <Area
+        type="monotone"
+        dataKey="emissions_scope1"
+        stackId="1"
+        stroke="red"
+        fill="red"
+      />
+      <Area
+        type="monotone"
+        dataKey="emissions_scope2_location"
+        stackId="1"
+        stroke="blue"
+        fill="blue"
+      />
+      <Area
+        type="monotone"
+        dataKey="emissions_scope3"
+        stackId="1"
+        stroke="orange"
+        fill="orange"
+      />
+    </AreaChart>
+  );
+});
+
 export default function EmissionView({ entries }: EmissionViewProps) {
   const NONE = "__none__";
   const [selected, setSelected] = useState(NONE);
@@ -55,7 +114,7 @@ export default function EmissionView({ entries }: EmissionViewProps) {
         selected={selected}
         handleChange={(e) => setSelected(e.target.value)}
       />
-      {selected !== NONE && <div>Selected: {selected}</div>}
+      <AbsoluteEmissions entries={entries} selected={selected} />
     </div>
   );
 }
